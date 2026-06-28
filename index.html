@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1B5E20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Murajaah">
+<title>Tracker Murajaah Al-Qur'an</title>
+<style>
+  :root {
+    --hijau:      #1B5E20;
+    --hijau-med:  #2E7D32;
+    --hijau-muda: #66BB6A;
+    --hijau-bg:   #E8F5E9;
+    --emas:       #F9A825;
+    --emas-bg:    #FFF8E1;
+    --putih:      #FFFFFF;
+    --abu-bg:     #F5F5F5;
+    --abu:        #9E9E9E;
+    --teks:       #212121;
+    --merah:      #C62828;
+    --radius:     14px;
+    --shadow:     0 2px 12px rgba(0,0,0,0.10);
+    --nav-h:      64px;
+    --header-h:   56px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--abu-bg);
+    color: var(--teks);
+    min-height: 100dvh;
+    padding-bottom: calc(var(--nav-h) + 16px);
+    overscroll-behavior: none;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--hijau);
+    height: var(--header-h);
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+  }
+  .header-icon { font-size: 24px; }
+  .header-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
+  .header-sub   { color: rgba(255,255,255,0.75); font-size: 11px; }
+
+  /* ── BOTTOM NAV ── */
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    height: var(--nav-h);
+    background: #fff;
+    display: flex;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+    border-top: 1px solid #e0e0e0;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px; border: none; background: transparent;
+    cursor: pointer; transition: background .15s;
+    padding: 6px 0;
+  }
+  .nav-btn.active { background: var(--hijau-bg); }
+  .nav-btn .nav-ico { font-size: 22px; }
+  .nav-btn .nav-lbl {
+    font-size: 10px; font-weight: 600;
+    color: var(--abu); letter-spacing: .3px;
+  }
+  .nav-btn.active .nav-lbl { color: var(--hijau); }
+
+  /* ── PAGE ── */
+  .page { display: none; padding: 12px; }
+  .page.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--hijau); color: #fff;
+    padding: 12px 16px; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-body { padding: 14px 16px; }
+
+  /* ── STAT GRID ── */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-num { font-size: 30px; font-weight: 800; color: var(--hijau); line-height: 1; }
+  .stat-lbl { font-size: 11px; color: var(--abu); margin-top: 4px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 18px; border-radius: 10px; border: none;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { opacity: .8; transform: scale(.97); }
+  .btn-primary { background: var(--hijau); color: #fff; }
+  .btn-emas    { background: var(--emas); color: #fff; }
+  .btn-outline { background: transparent; color: var(--hijau); border: 2px solid var(--hijau); }
+  .btn-danger  { background: var(--merah); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .btn-full { width: 100%; justify-content: center; margin-top: 8px; }
+
+  /* ── FORM ── */
+  .form-group { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--hijau); margin-bottom: 5px; }
+  .form-control {
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1.5px solid #e0e0e0; font-size: 14px;
+    outline: none; background: #fafafa;
+    transition: border-color .2s;
+  }
+  .form-control:focus { border-color: var(--hijau-muda); background: #fff; }
+  select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239E9E9E' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+  /* ── LIST ITEM ── */
+  .list-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 0; border-bottom: 1px solid #f0f0f0;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .list-item-icon { font-size: 22px; flex-shrink: 0; }
+  .list-item-main { flex: 1; min-width: 0; }
+  .list-item-title { font-size: 14px; font-weight: 600; }
+  .list-item-sub   { font-size: 12px; color: var(--abu); margin-top: 2px; }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge-hijau  { background: var(--hijau-bg); color: var(--hijau); }
+  .badge-emas   { background: var(--emas-bg); color: #856404; }
+  .badge-abu    { background: #f0f0f0; color: #616161; }
+  .badge-merah  { background: #FFEBEE; color: var(--merah); }
+
+  /* ── CHECKLIST ── */
+  .check-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer;
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 26px; height: 26px; border-radius: 8px;
+    border: 2px solid #ddd; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0; transition: all .2s;
+  }
+  .check-box.checked { background: var(--hijau); border-color: var(--hijau); }
+  .check-box.checked::after { content: '✓'; color: #fff; font-size: 15px; font-weight: 700; }
+  .check-text { font-size: 14px; flex: 1; }
+  .check-text.done { text-decoration: line-through; color: var(--abu); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { background: #e0e0e0; border-radius: 20px; height: 8px; overflow: hidden; }
+  .progress-bar  { background: var(--hijau-muda); height: 100%; border-radius: 20px; transition: width .4s; }
+
+  /* ── SURAH GRID JUZ 30 ── */
+  .surah-list { display: flex; flex-direction: column; gap: 8px; }
+  .surah-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; border-radius: 10px;
+    background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    cursor: pointer; transition: all .15s;
+  }
+  .surah-item:active { transform: scale(.98); }
+  .surah-no {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--hijau-bg); color: var(--hijau);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .surah-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .surah-ayat { font-size: 11px; color: var(--abu); }
+
+  /* ── MURAJAAH CARD ── */
+  .muraja-item {
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    margin-bottom: 10px; overflow: hidden;
+  }
+  .muraja-head {
+    padding: 10px 14px; background: var(--hijau-bg);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .muraja-title { font-weight: 700; font-size: 14px; color: var(--hijau); }
+  .muraja-body  { padding: 10px 14px; }
+  .muraja-steps { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .muraja-step  {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .15s; border: 1.5px solid transparent;
+  }
+  .muraja-step.done     { background: var(--hijau); color: #fff; }
+  .muraja-step.today    { background: var(--emas); color: #fff; border-color: var(--emas); }
+  .muraja-step.upcoming { background: #f5f5f5; color: #9e9e9e; }
+  .muraja-step.overdue  { background: #FFEBEE; color: var(--merah); border-color: var(--merah); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,.5); display: none;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff; width: 100%; max-width: 480px;
+    border-radius: 20px 20px 0 0;
+    padding: 20px; max-height: 90dvh; overflow-y: auto;
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle {
+    width: 36px; height: 4px; background: #ddd; border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--hijau); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--hijau); color: #fff; padding: 10px 20px;
+    border-radius: 24px; font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,.20); z-index: 400;
+    opacity: 0; transition: all .3s; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--abu); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; line-height: 1.6; }
+
+  /* ── ARABIC ── */
+  .arabic { font-size: 20px; direction: rtl; text-align: right; color: var(--hijau); margin-bottom: 4px; line-height: 1.8; }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: #f0f0f0; margin: 12px 0; }
+
+  /* ── REMINDER INFO ── */
+  .reminder-info {
+    background: var(--emas-bg); border-radius: 10px;
+    padding: 12px 14px; margin-top: 10px;
+    font-size: 12px; color: #856404; display: flex; gap: 8px;
+  }
+
+  .section-title {
+    font-size: 12px; font-weight: 700; color: var(--abu);
+    letter-spacing: .8px; text-transform: uppercase;
+    margin: 16px 0 8px; padding-left: 4px;
+  }
+
+  .bismillah {
+    text-align: center; font-size: 22px;
+    color: var(--emas); padding: 12px 0 4px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <span class="header-icon">🕌</span>
+  <div>
+    <div class="header-title">Tracker Murajaah</div>
+    <div class="header-sub" id="headerDate"></div>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE: DASHBOARD ════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="bismillah">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+  <div class="section-title">Statistik Hafalan</div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-num" id="s-total-ayat">0</div>
+      <div class="stat-lbl">Total Ayat Hafal</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="s-total-muraja">0</div>
+      <div class="stat-lbl">Sesi Murajaah</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="s-checklist">0%</div>
+      <div class="stat-lbl">Checklist Hari Ini</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="s-juz30">0/37</div>
+      <div class="stat-lbl">Surah Juz 30</div>
+    </div>
+  </div>
+
+  <div class="section-title">Murajaah Hari Ini</div>
+  <div class="card">
+    <div class="card-header">⚠️ Jadwal Ulang Hari Ini</div>
+    <div class="card-body" id="today-muraja">
+      <div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Tidak ada murajaah yang jatuh tempo hari ini</div></div>
+    </div>
+  </div>
+
+  <div class="section-title">Panduan Spaced Repetition</div>
+  <div class="card">
+    <div class="card-header">🔄 Jadwal Pengulangan</div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--hijau-bg);border-radius:8px;">
+          <span>Setelah hafal</span><span class="badge badge-hijau">Hari ke-1</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--emas-bg);border-radius:8px;">
+          <span>Ulang ke-2</span><span class="badge badge-emas">Hari ke-3</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--hijau-bg);border-radius:8px;">
+          <span>Ulang ke-3</span><span class="badge badge-hijau">Hari ke-7</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--emas-bg);border-radius:8px;">
+          <span>Ulang ke-4</span><span class="badge badge-emas">Hari ke-14</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--hijau-bg);border-radius:8px;">
+          <span>Ulang ke-5</span><span class="badge badge-hijau">Hari ke-30</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 10px;background:#f5f5f5;border-radius:8px;">
+          <span>Siklus tetap</span><span class="badge badge-abu">1× / minggu</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE: LOG HAFALAN ════════════════════ -->
+<div class="page" id="page-log">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">Log Ayat Dihafal</div>
+    <button class="btn btn-primary btn-sm" onclick="openAddLog()">＋ Tambah</button>
+  </div>
+  <div id="log-list">
+    <div class="empty"><div class="empty-icon">📖</div><div class="empty-text">Belum ada ayat yang dicatat.<br>Tap tombol + Tambah untuk mulai.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE: MURAJAAH ════════════════════ -->
+<div class="page" id="page-muraja">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">Tracker Murajaah</div>
+  </div>
+  <div class="reminder-info">
+    <span>⏰</span>
+    <span>Tap tombol ulang pada tiap sesi untuk menandai sudah murajaah. Warna <b style="color:var(--emas)">kuning</b> = hari ini, <b style="color:var(--merah)">merah</b> = terlambat.</span>
+  </div>
+  <div class="section-title">Daftar Ayat</div>
+  <div id="muraja-list">
+    <div class="empty"><div class="empty-icon">🔄</div><div class="empty-text">Belum ada data hafalan.<br>Tambahkan ayat di tab Log Hafalan.</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE: CHECKLIST ════════════════════ -->
+<div class="page" id="page-check">
+  <div class="section-title">Checklist Harian — <span id="check-date"></span></div>
+  <div class="card">
+    <div class="card-header">🌅 7 Amalan Hafidz Hari Ini</div>
+    <div class="card-body" id="checklist-container"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">📊 Progress Hari Ini</div>
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="font-size:13px;">Selesai</span>
+        <span style="font-size:13px;font-weight:700;color:var(--hijau)" id="check-count">0 / 7</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" id="check-bar" style="width:0%"></div></div>
+      <div id="check-msg" style="font-size:12px;color:var(--abu);margin-top:8px;text-align:center;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">📅 Riwayat Checklist</div>
+    <div class="card-body" id="history-list">
+      <div class="empty" style="padding:20px 0;"><div class="empty-text">Belum ada riwayat</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ PAGE: JUZ 30 ════════════════════ -->
+<div class="page" id="page-juz30">
+  <div class="section-title">Status Hafalan Juz 30</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:13px;">Progress Juz 30</span>
+        <span style="font-size:13px;font-weight:700;color:var(--hijau)" id="juz-progress-lbl">0 / 37</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" id="juz-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="surah-list" id="surah-list"></div>
+</div>
+
+<!-- ════════════════════ BOTTOM NAV ════════════════════ -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="goPage('dashboard',this)">
+    <span class="nav-ico">🏠</span><span class="nav-lbl">Dashboard</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('log',this)">
+    <span class="nav-ico">📖</span><span class="nav-lbl">Log Hafal</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('muraja',this)">
+    <span class="nav-ico">🔄</span><span class="nav-lbl">Murajaah</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('check',this)">
+    <span class="nav-ico">✅</span><span class="nav-lbl">Checklist</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('juz30',this)">
+    <span class="nav-ico">📗</span><span class="nav-lbl">Juz 30</span>
+  </button>
+</nav>
+
+<!-- ════════════════════ MODAL: TAMBAH LOG ════════════════════ -->
+<div class="modal-overlay" id="modal-log">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📖 Tambah Ayat Baru</div>
+    <div class="form-group">
+      <label class="form-label">Nama Surah</label>
+      <select class="form-control" id="inp-surah"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nomor Ayat (misal: 1-5 atau 7)</label>
+      <input class="form-control" id="inp-ayat" type="text" placeholder="1-5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Catatan (opsional)</label>
+      <input class="form-control" id="inp-catatan" type="text" placeholder="Kesulitan, teknik, dll">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kekuatan Hafalan</label>
+      <select class="form-control" id="inp-kekuatan">
+        <option value="1">⭐ Baru hafal — perlu banyak ulang</option>
+        <option value="2">⭐⭐ Cukup — masih sering tersangkut</option>
+        <option value="3" selected>⭐⭐⭐ Lumayan — kadang lupa</option>
+        <option value="4">⭐⭐⭐⭐ Baik — jarang lupa</option>
+        <option value="5">⭐⭐⭐⭐⭐ Kuat — sangat lancar</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveLog()">💾 Simpan</button>
+    <button class="btn btn-outline btn-full" style="margin-top:6px;" onclick="closeModal('modal-log')">Batal</button>
+  </div>
+</div>
+
+<!-- ════════════════════ MODAL: STATUS SURAH ════════════════════ -->
+<div class="modal-overlay" id="modal-surah">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-surah-title">Status Surah</div>
+    <div class="form-group">
+      <label class="form-label">Status Hafalan</label>
+      <select class="form-control" id="inp-status-surah">
+        <option value="belum">⬜ Belum Hafal</option>
+        <option value="proses">📖 Sedang Hafal</option>
+        <option value="ulang">🔄 Perlu Diulang</option>
+        <option value="kuat">✅ Sudah Kuat</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kekuatan (1–5 ⭐)</label>
+      <select class="form-control" id="inp-kuat-surah">
+        <option value="0">— Belum dinilai —</option>
+        <option value="1">⭐</option>
+        <option value="2">⭐⭐</option>
+        <option value="3">⭐⭐⭐</option>
+        <option value="4">⭐⭐⭐⭐</option>
+        <option value="5">⭐⭐⭐⭐⭐</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveSurahStatus()">💾 Simpan</button>
+    <button class="btn btn-outline btn-full" style="margin-top:6px;" onclick="closeModal('modal-surah')">Batal</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════
+const SURAH_JUZ30 = [
+  {no:78,nama:"An-Naba'",ayat:40},{no:79,nama:"An-Nazi'at",ayat:46},
+  {no:80,nama:"Abasa",ayat:42},{no:81,nama:"At-Takwir",ayat:29},
+  {no:82,nama:"Al-Infitar",ayat:19},{no:83,nama:"Al-Mutaffifin",ayat:36},
+  {no:84,nama:"Al-Insyiqaq",ayat:25},{no:85,nama:"Al-Buruj",ayat:22},
+  {no:86,nama:"At-Tariq",ayat:17},{no:87,nama:"Al-A'la",ayat:19},
+  {no:88,nama:"Al-Ghasyiyah",ayat:26},{no:89,nama:"Al-Fajr",ayat:30},
+  {no:90,nama:"Al-Balad",ayat:20},{no:91,nama:"Asy-Syams",ayat:15},
+  {no:92,nama:"Al-Lail",ayat:21},{no:93,nama:"Ad-Duha",ayat:11},
+  {no:94,nama:"Al-Insyirah",ayat:8},{no:95,nama:"At-Tin",ayat:8},
+  {no:96,nama:"Al-Alaq",ayat:19},{no:97,nama:"Al-Qadr",ayat:5},
+  {no:98,nama:"Al-Bayyinah",ayat:8},{no:99,nama:"Az-Zalzalah",ayat:8},
+  {no:100,nama:"Al-Adiyat",ayat:11},{no:101,nama:"Al-Qari'ah",ayat:11},
+  {no:102,nama:"At-Takatsur",ayat:8},{no:103,nama:"Al-Asr",ayat:3},
+  {no:104,nama:"Al-Humazah",ayat:9},{no:105,nama:"Al-Fil",ayat:5},
+  {no:106,nama:"Quraisy",ayat:4},{no:107,nama:"Al-Ma'un",ayat:7},
+  {no:108,nama:"Al-Kautsar",ayat:3},{no:109,nama:"Al-Kafirun",ayat:6},
+  {no:110,nama:"An-Nasr",ayat:3},{no:111,nama:"Al-Masad",ayat:5},
+  {no:112,nama:"Al-Ikhlas",ayat:4},{no:113,nama:"Al-Falaq",ayat:5},
+  {no:114,nama:"An-Nas",ayat:6},
+];
+
+const AMALAN = [
+  "📖 Baca ayat baru (10× melihat)",
+  "🧠 Hafal tanpa melihat (10×)",
+  "🔊 Tasmi' sendiri — tutup mushaf",
+  "📝 Tulis ayat dari ingatan",
+  "🕌 Bacakan dalam shalat sunah",
+  "🔄 Murajaah ayat kemarin",
+  "📅 Update tracker ini",
+];
+
+const MURAJA_OFFSETS = [1,3,7,14,30]; // hari setelah hafal
+
+// ── STORAGE HELPERS ──
+const S = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+
+function getLogs()    { return S.get('logs') || []; }
+function getMuraja()  { return S.get('muraja') || {}; }
+function getChecks()  { return S.get('checks') || {}; }
+function getJuz30()   { return S.get('juz30') || {}; }
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function addDays(dateStr, n) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(ds) {
+  if (!ds) return '-';
+  const [y,m,d] = ds.split('-');
+  const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${d} ${bulan[parseInt(m)-1]} ${y}`;
+}
+function bintang(n) { return '⭐'.repeat(n||0) || '-'; }
+
+// ══════════════════════════════════════════════════
+// NAVIGASI
+// ══════════════════════════════════════════════════
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  renderPage(id);
+}
+
+function renderPage(id) {
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'log')       renderLog();
+  if (id === 'muraja')    renderMuraja();
+  if (id === 'check')     renderChecklist();
+  if (id === 'juz30')     renderJuz30();
+}
+
+// ══════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════
+function renderDashboard() {
+  const logs   = getLogs();
+  const muraja = getMuraja();
+  const checks = getChecks();
+  const juz30  = getJuz30();
+  const today  = todayStr();
+
+  // stat total ayat — hitung unik ayat dari log
+  document.getElementById('s-total-ayat').textContent = logs.length;
+
+  // total sesi muraja selesai
+  let totalMuraja = 0;
+  Object.values(muraja).forEach(m => {
+    if (m.done) totalMuraja += m.done.filter(Boolean).length;
+  });
+  document.getElementById('s-total-muraja').textContent = totalMuraja;
+
+  // checklist hari ini
+  const todayCheck = checks[today] || Array(7).fill(false);
+  const doneToday = todayCheck.filter(Boolean).length;
+  document.getElementById('s-checklist').textContent = Math.round(doneToday/7*100) + '%';
+
+  // juz30 kuat
+  const kuat = Object.values(juz30).filter(s => s.status === 'kuat').length;
+  document.getElementById('s-juz30').textContent = kuat + '/37';
+
+  // murajaah jatuh tempo hari ini
+  const container = document.getElementById('today-muraja');
+  const due = [];
+  logs.forEach((log, idx) => {
+    const m = muraja[idx] || { done: Array(5).fill(false) };
+    MURAJA_OFFSETS.forEach((offset, si) => {
+      if (!m.done || m.done[si]) return;
+      const dueDate = addDays(log.tanggal, offset);
+      if (dueDate <= today) {
+        due.push({ log, idx, si, dueDate, overdue: dueDate < today });
+      }
+    });
+  });
+
+  if (due.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Tidak ada murajaah yang jatuh tempo hari ini. Jazakallah khair!</div></div>`;
+  } else {
+    container.innerHTML = due.map(({log, idx, si, dueDate, overdue}) => `
+      <div class="list-item">
+        <span class="list-item-icon">🔄</span>
+        <div class="list-item-main">
+          <div class="list-item-title">${log.surah} — Ayat ${log.ayat}</div>
+          <div class="list-item-sub">Ulang ke-${si+1} · ${overdue ? '⚠️ Terlambat' : 'Hari ini'}</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="markMuraja(${idx},${si},true)">✓ Selesai</button>
+      </div>
+    `).join('');
+  }
+}
+
+// ══════════════════════════════════════════════════
+// LOG HAFALAN
+// ══════════════════════════════════════════════════
+function renderLog() {
+  const logs = getLogs();
+  const el = document.getElementById('log-list');
+  if (!logs.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📖</div><div class="empty-text">Belum ada ayat yang dicatat.<br>Tap tombol + Tambah untuk mulai.</div></div>`;
+    return;
+  }
+  el.innerHTML = logs.slice().reverse().map((log, ri) => {
+    const idx = logs.length - 1 - ri;
+    const m = getMuraja()[idx] || { done: Array(5).fill(false) };
+    const done = (m.done || []).filter(Boolean).length;
+    return `
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-header" style="background:var(--hijau-bg);color:var(--hijau);justify-content:space-between;">
+        <span>${log.surah} — Ayat ${log.ayat}</span>
+        <span style="font-size:11px;">${fmtDate(log.tanggal)}</span>
+      </div>
+      <div class="card-body" style="padding:10px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--abu);">${bintang(log.kekuatan)}</span>
+          <span class="badge badge-hijau">Ulang: ${done}/5</span>
+        </div>
+        ${log.catatan ? `<div style="font-size:12px;color:#555;font-style:italic;">"${log.catatan}"</div>` : ''}
+        <button class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="deleteLog(${idx})">🗑 Hapus</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddLog() {
+  const sel = document.getElementById('inp-surah');
+  sel.innerHTML = SURAH_JUZ30.map(s => `<option value="${s.nama}">Q.S ${s.no} — ${s.nama} (${s.ayat} ayat)</option>`).join('');
+  document.getElementById('inp-ayat').value = '';
+  document.getElementById('inp-catatan').value = '';
+  document.getElementById('inp-kekuatan').value = '3';
+  openModal('modal-log');
+}
+
+function saveLog() {
+  const surah = document.getElementById('inp-surah').value;
+  const ayat  = document.getElementById('inp-ayat').value.trim();
+  const catatan = document.getElementById('inp-catatan').value.trim();
+  const kekuatan = parseInt(document.getElementById('inp-kekuatan').value);
+
+  if (!ayat) { showToast('⚠️ Nomor ayat harus diisi'); return; }
+
+  const logs = getLogs();
+  logs.push({ surah, ayat, catatan, kekuatan, tanggal: todayStr() });
+  S.set('logs', logs);
+
+  // init muraja untuk entry baru
+  const muraja = getMuraja();
+  muraja[logs.length - 1] = { done: Array(5).fill(false) };
+  S.set('muraja', muraja);
+
+  closeModal('modal-log');
+  showToast('✅ Ayat berhasil dicatat!');
+  renderLog();
+  renderDashboard();
+}
+
+function deleteLog(idx) {
+  if (!confirm('Hapus catatan hafalan ini?')) return;
+  const logs = getLogs();
+  logs.splice(idx, 1);
+  S.set('logs', logs);
+  showToast('🗑 Catatan dihapus');
+  renderLog();
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════════
+// MURAJAAH
+// ══════════════════════════════════════════════════
+function renderMuraja() {
+  const logs   = getLogs();
+  const muraja = getMuraja();
+  const today  = todayStr();
+  const el     = document.getElementById('muraja-list');
+
+  if (!logs.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔄</div><div class="empty-text">Belum ada data hafalan.<br>Tambahkan ayat di tab Log Hafalan.</div></div>`;
+    return;
+  }
+
+  el.innerHTML = logs.map((log, idx) => {
+    const m = muraja[idx] || { done: Array(5).fill(false) };
+    const done = m.done || Array(5).fill(false);
+
+    const steps = MURAJA_OFFSETS.map((offset, si) => {
+      const dueDate = addDays(log.tanggal, offset);
+      let cls = 'upcoming', lbl = `+${offset}hr`;
+      if (done[si])        { cls = 'done';    lbl = `✓ +${offset}hr`; }
+      else if (dueDate < today) { cls = 'overdue'; lbl = `! +${offset}hr`; }
+      else if (dueDate === today) { cls = 'today';   lbl = `▶ +${offset}hr`; }
+      const clickable = !done[si] ? `onclick="markMuraja(${idx},${si},true)"` : '';
+      return `<span class="muraja-step ${cls}" ${clickable} title="${fmtDate(dueDate)}">${lbl}</span>`;
+    }).join('');
+
+    const allDone = done.every(Boolean);
+    return `
+    <div class="muraja-item">
+      <div class="muraja-head">
+        <span class="muraja-title">${log.surah} — Ayat ${log.ayat}</span>
+        <span class="badge ${allDone ? 'badge-hijau' : 'badge-abu'}">${allDone ? '✅ Selesai' : done.filter(Boolean).length+'/5'}</span>
+      </div>
+      <div class="muraja-body">
+        <div style="font-size:11px;color:var(--abu);margin-bottom:6px;">Hafal: ${fmtDate(log.tanggal)} · ${bintang(log.kekuatan)}</div>
+        <div class="muraja-steps">${steps}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function markMuraja(logIdx, stepIdx, val) {
+  const muraja = getMuraja();
+  if (!muraja[logIdx]) muraja[logIdx] = { done: Array(5).fill(false) };
+  muraja[logIdx].done[stepIdx] = val;
+  S.set('muraja', muraja);
+  showToast('✅ Murajaah ke-' + (stepIdx+1) + ' selesai!');
+  renderMuraja();
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════════
+// CHECKLIST HARIAN
+// ══════════════════════════════════════════════════
+function renderChecklist() {
+  const today  = todayStr();
+  const checks = getChecks();
+  const todayCheck = checks[today] || Array(7).fill(false);
+
+  document.getElementById('check-date').textContent = fmtDate(today);
+
+  const container = document.getElementById('checklist-container');
+  container.innerHTML = AMALAN.map((a, i) => `
+    <div class="check-item" onclick="toggleCheck(${i})">
+      <div class="check-box ${todayCheck[i] ? 'checked' : ''}"></div>
+      <span class="check-text ${todayCheck[i] ? 'done' : ''}">${a}</span>
+    </div>
+  `).join('');
+
+  const done = todayCheck.filter(Boolean).length;
+  document.getElementById('check-count').textContent = `${done} / 7`;
+  document.getElementById('check-bar').style.width = (done/7*100) + '%';
+
+  const msgs = ['', 'Bismillah, tetap semangat! 💪', 'Bagus! Terus lanjutkan 🔥',
+    'Setengah jalan, kamu bisa! ⭐', 'Hampir sempurna, hebat! 🌟',
+    'Luar biasa! Tinggal sedikit lagi 🏆', 'MasyaAllah! Hampir sempurna 🤩',
+    'MasyaAllah Tabarakallah! Sempurna hari ini! 🎉'];
+  document.getElementById('check-msg').textContent = msgs[done] || '';
+
+  // riwayat
+  const histEl = document.getElementById('history-list');
+  const hist = Object.entries(checks)
+    .filter(([d]) => d !== today)
+    .sort((a,b) => b[0].localeCompare(a[0]))
+    .slice(0, 7);
+
+  if (!hist.length) {
+    histEl.innerHTML = `<div class="empty" style="padding:16px 0;"><div class="empty-text">Belum ada riwayat</div></div>`;
+  } else {
+    histEl.innerHTML = hist.map(([d, arr]) => {
+      const n = arr.filter(Boolean).length;
+      const pct = Math.round(n/7*100);
+      return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;">
+        <span style="font-size:13px;">${fmtDate(d)}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:60px;background:#e0e0e0;border-radius:4px;height:6px;overflow:hidden;">
+            <div style="width:${pct}%;background:var(--hijau-muda);height:100%;"></div>
+          </div>
+          <span class="badge ${n===7?'badge-hijau':n>=4?'badge-emas':'badge-abu'}">${n}/7</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function toggleCheck(idx) {
+  const today  = todayStr();
+  const checks = getChecks();
+  if (!checks[today]) checks[today] = Array(7).fill(false);
+  checks[today][idx] = !checks[today][idx];
+  S.set('checks', checks);
+  renderChecklist();
+  renderDashboard();
+  if (checks[today][idx]) showToast('✅ ' + AMALAN[idx].replace(/^[^\s]+\s/,''));
+}
+
+// ══════════════════════════════════════════════════
+// JUZ 30
+// ══════════════════════════════════════════════════
+let editingSurahIdx = null;
+
+function renderJuz30() {
+  const juz30 = getJuz30();
+  const kuat  = Object.values(juz30).filter(s => s.status === 'kuat').length;
+
+  document.getElementById('juz-progress-lbl').textContent = kuat + ' / 37';
+  document.getElementById('juz-bar').style.width = (kuat/37*100) + '%';
+
+  const statusMap = {
+    belum:  { icon: '⬜', lbl: 'Belum',       cls: 'badge-abu'   },
+    proses: { icon: '📖', lbl: 'Sedang Hafal', cls: 'badge-emas'  },
+    ulang:  { icon: '🔄', lbl: 'Perlu Diulang',cls: 'badge-merah' },
+    kuat:   { icon: '✅', lbl: 'Sudah Kuat',   cls: 'badge-hijau' },
+  };
+
+  document.getElementById('surah-list').innerHTML = SURAH_JUZ30.map((s, i) => {
+    const data   = juz30[i] || { status: 'belum', kuat: 0 };
+    const sm     = statusMap[data.status] || statusMap.belum;
+    return `
+    <div class="surah-item" onclick="openSurahModal(${i})">
+      <div class="surah-no">${s.no}</div>
+      <div style="flex:1;">
+        <div class="surah-name">${s.nama}</div>
+        <div class="surah-ayat">${s.ayat} ayat · ${bintang(data.kuat)}</div>
+      </div>
+      <span class="badge ${sm.cls}">${sm.icon} ${sm.lbl}</span>
+    </div>`;
+  }).join('');
+}
+
+function openSurahModal(idx) {
+  editingSurahIdx = idx;
+  const s     = SURAH_JUZ30[idx];
+  const juz30 = getJuz30();
+  const data  = juz30[idx] || { status: 'belum', kuat: 0 };
+  document.getElementById('modal-surah-title').textContent = `Q.S ${s.no} — ${s.nama}`;
+  document.getElementById('inp-status-surah').value = data.status || 'belum';
+  document.getElementById('inp-kuat-surah').value   = data.kuat  || 0;
+  openModal('modal-surah');
+}
+
+function saveSurahStatus() {
+  const juz30  = getJuz30();
+  const status = document.getElementById('inp-status-surah').value;
+  const kuat   = parseInt(document.getElementById('inp-kuat-surah').value);
+  juz30[editingSurahIdx] = { status, kuat };
+  S.set('juz30', juz30);
+  closeModal('modal-surah');
+  showToast('✅ Status surah diperbarui');
+  renderJuz30();
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════════
+// MODAL & TOAST HELPERS
+// ══════════════════════════════════════════════════
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+function init() {
+  // Header date
+  const d = new Date();
+  const hari = ['Ahad','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const bln  = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  document.getElementById('headerDate').textContent =
+    `${hari[d.getDay()]}, ${d.getDate()} ${bln[d.getMonth()]} ${d.getFullYear()}`;
+
+  renderDashboard();
+
+  // Request notifikasi
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  // Reminder notifikasi jika ada yg due
+  scheduleReminders();
+}
+
+function scheduleReminders() {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const logs   = getLogs();
+  const muraja = getMuraja();
+  const today  = todayStr();
+  let dueCount = 0;
+  logs.forEach((log, idx) => {
+    const m = muraja[idx] || { done: Array(5).fill(false) };
+    MURAJA_OFFSETS.forEach((offset, si) => {
+      if (m.done && m.done[si]) return;
+      if (addDays(log.tanggal, offset) <= today) dueCount++;
+    });
+  });
+  if (dueCount > 0) {
+    new Notification('🔄 Murajaah Al-Qur\'an', {
+      body: `Ada ${dueCount} ayat yang perlu diulang hari ini. Jangan sampai lupa!`,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="26" font-size="26">🕌</text></svg>'
+    });
+  }
+}
+
+init();
+</script>
+</body>
+</html>
